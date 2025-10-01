@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Cinephile Online | Home{% endblock %}
+
+{% block content %}
+    <h1 class="my-4">Cinephile Online: User Movie Manager</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="alert alert-{{ category }} mx-auto" role="alert" style="max-width: 600px;">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="user-management-section">
+
+        <section class="add-user-card card shadow-sm p-4 mb-4 mx-auto" style="max-width: 600px;">
+            <h2 class="h4 text-warning">➕ Add New Cinephile</h2>
+            <form id="add-user-form" class="d-flex gap-3">
+                <input type="text" id="username-input" class="form-control" placeholder="Enter new user name" required>
+                <button type="submit" class="btn btn-warning">Enroll User</button>
+            </form>
+            <p id="form-message" class="text-danger mt-2"></p>
+        </section>
+
+        <section class="existing-users">
+            <h2 class="h4 text-secondary">👥 Existing Cinephiles</h2>
+            <div class="user-grid">
+                {% if users %}
+                    {% for user in users %}
+                        <div class="user-card card shadow-sm p-4 text-center">
+                            <h3 class="h5 text-light">{{ user.user_name }}</h3>
+                            <a href="{{ url_for('movies', user_id=user.id) }}" class="btn btn-secondary mt-3">
+                                View Favourite Movies
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted">No cinephiles found. Start by enrolling one!</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('add-user-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const nameInput = document.getElementById('username-input');
+        const name = nameInput.value.trim();
+        const formMessage = document.getElementById('form-message');
+        formMessage.textContent = '';
+
+        if (!name) {
+            formMessage.textContent = 'Please enter a name.';
+            return;
+        }
+
+        const data = { name: name };
+
+        fetch("{{ url_for('users') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                return response.text().then(text => Promise.reject(`Server Error: ${text}`));
+            }
+        })
+        .then(data => {
+            if (data.status === 'success' || data.status === 'error') {
+                let reloadUrl = "{{ url_for('home') }}"; // Reloads the home page
+                reloadUrl += '?cacheBuster=' + Date.now();
+                window.location.href = reloadUrl;
+            }
+        })
+        .catch(error => {
+            formMessage.textContent = 'Operation failed: ' + error;
+            console.error('Fetch error:', error);
+        });
+    });
+</script>
+{% endblock %}

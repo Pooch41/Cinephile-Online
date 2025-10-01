@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Cinephile Online | {{ user_name }}'s Favourites{% endblock %}
+
+{% block content %}
+    <h1 class="my-4">{{ user_name }}'s Movie Collection</h1>
+
+    <a href="{{ url_for('home') }}" class="btn btn-secondary d-block mx-auto mb-4" style="width: 200px;">← Back to Cinephiles</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="alert alert-{{ category }} mx-auto" role="alert" style="max-width: 800px;">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <section class="add-movie-section card shadow-sm p-4 mb-4 mx-auto" style="max-width: 600px;">
+        <h2 class="h4 text-warning">➕ Add a New Favourite Movie</h2>
+        <form id="add-movie-form" class="d-flex gap-3">
+            <input type="text" id="movie-title-input" class="form-control" placeholder="Enter movie title (e.g., Inception)" required>
+            <button type="submit" class="btn btn-warning">Search & Add</button>
+        </form>
+        <p id="form-message" class="text-danger mt-2"></p>
+    </section>
+
+    <section class="movie-grid-section mt-5">
+        <h2 class="h4 text-secondary">🎬 Your Favourite Movies</h2>
+        <div class="movie-grid">
+            {% if movies %}
+                {% for movie in movies %}
+                    <div class="movie-card card shadow-sm p-3 text-center">
+                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }} Poster" class="movie-poster mx-auto">
+
+                        <div class="movie-details">
+                            <h3 class="h5 text-warning">{{ movie.title }}</h3>
+                            <p class="mb-1"><strong>Year:</strong> {{ movie.year_of_release }}</p>
+                            <p><strong>Director:</strong> {{ movie.director }}</p>
+                        </div>
+
+                        <div class="movie-actions">
+                            <form action="{{ url_for('update', user_id=user_id, movie_id=movie.id) }}" method="POST" class="update-form-json">
+                                <input type="text" name="new_title" class="form-control mb-1" placeholder="New Title" required>
+                                <button type="submit" class="btn btn-warning btn-sm">Update Title</button>
+                            </form>
+
+                            <form action="{{ url_for('delete', user_id=user_id, movie_id=movie.id) }}" method="POST" class="delete-form">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete Favourite</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-muted">You haven't added any favourite movies yet!</p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const USER_ID = {{ user_id }};
+    const CURRENT_URL = "{{ url_for('movies', user_id=user_id) }}";
+
+    function forceReload() {
+        let reloadUrl = CURRENT_URL;
+        reloadUrl += '?cacheBuster=' + Date.now();
+        window.location.href = reloadUrl;
+    }
+
+    // 1. Add Movie fetch handler
+    document.getElementById('add-movie-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const titleInput = document.getElementById('movie-title-input');
+        const title = titleInput.value.trim();
+        const formMessage = document.getElementById('form-message');
+        formMessage.textContent = '';
+        if (!title) { formMessage.textContent = 'Please enter a movie title.'; return; }
+        const data = { title: title };
+        fetch(CURRENT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), credentials: 'include' })
+        .then(response => { if (response.ok) { return response.json(); } else { return response.text().then(text => Promise.reject(`Server Error: ${text}`)); } })
+        .then(data => { if (data.status === 'success' || data.status === 'error') { forceReload(); } })
+        .catch(error => { formMessage.textContent = 'Operation failed: ' + error; console.error('Fetch error:', error); });
+    });
+
+    // 2. Update Movie fetch handler
+    document.querySelectorAll('.update-form-json').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const newTitleInput = this.querySelector('input[name="new_title"]');
+            const newTitle = newTitleInput.value.trim();
+            const url = this.action;
+            if (!newTitle) { alert('Please enter a new title.'); return; }
+            const data = { new_title: newTitle };
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), credentials: 'include' })
+            .then(response => { if (response.ok) { return response.json(); } else { return response.text().then(text => Promise.reject(`Server Error: ${text}`)); } })
+            .then(data => { if (data.status === 'success' || data.status === 'error') { forceReload(); } })
+            .catch(error => { alert('Operation failed: ' + error); console.error('Fetch error:', error); });
+        });
+    });
+
+    // 3. Delete Movie Confirmation
+    document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            const movieTitle = this.closest('.movie-card').querySelector('.movie-details h3').textContent;
+            if (!confirm(`Are you sure you want to delete '${movieTitle}' from your favorites?`)) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

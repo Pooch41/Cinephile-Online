@@ -10,7 +10,7 @@ class User(db.Model):
     user_name = db.Column(db.String, nullable=False)
 
     def __repr__(self):
-        return f"id-{self.id} name - {self.user_name}"
+        return f"id: {self.id} name: {self.user_name}"
 
     def __str__(self):
         return f"User name {self.user_name}(ID {self.id})"

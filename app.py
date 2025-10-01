@@ -22,7 +22,9 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SECRET_KEY'] = 'movies-rule'
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(basedir, 'data/movies.db')}"
+data_dir = os.path.join(basedir, 'data')
+db_path = os.path.join(data_dir, 'movies.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -160,7 +162,6 @@ def delete(user_id, movie_id):
 if __name__ == '__main__':
     db.init_app(app)
     data_manager = DataManager()
-    data_dir = os.path.join(basedir, 'data')
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     with app.app_context():

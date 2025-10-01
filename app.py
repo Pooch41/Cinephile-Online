@@ -28,12 +28,24 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 @app.route('/', methods=['GET'])
 def home():
+    """
+    Renders the home page (index.html), displaying a list of all users.
+
+    Returns:
+        str: Rendered HTML template.
+    """
     users = data_manager.get_users()
     return render_template('index.html', users=users)
 
 
 @app.route('/users', methods=['POST'])
 def users():
+    """
+    Handles the creation of a new user via a POST request (JSON payload).
+
+    Returns:
+        tuple: JSON response with status ('success' or 'error') and HTTP status code.
+    """
     try:
         data = request.get_json()
         name = data.get('name')
@@ -53,13 +65,23 @@ def users():
 
 @app.route('/users/<int:user_id>/movies', methods=['GET', 'POST'])
 def movies(user_id):
+    """
+    GET: Renders the movies page for a specific user, displaying their favorite movies.
+    POST: Adds a new movie to the user's favorites (via JSON payload and OMDb API lookup).
+
+    Args:
+        user_id (int): The ID of the user whose movies are being accessed.
+
+    Returns:
+        str/tuple: Rendered HTML template (GET) or JSON response (POST).
+    """
     if request.method == 'POST':
         try:
             data = request.get_json()
             title = data.get('title')
             if title is None:
                 return "Please enter movie title", 400
-            user = DataManager.get_user_by_id(user_id)
+            user = data_manager.get_user_by_id(user_id)
             user_name = user.user_name if user else f"User {user_id}"
             new_movie = data_manager.add_movie(user_id, title)
             redirect_url = url_for('movies', user_id=user_id)
@@ -73,7 +95,7 @@ def movies(user_id):
             return f"JSON Error: {e}", 400
 
     else:
-        user = DataManager.get_user_by_id(user_id)
+        user = data_manager.get_user_by_id(user_id)
         user_name = user.user_name if user else f"User {user_id} (Not Found)"
         fav_movies = data_manager.get_movies(user_id)
         return render_template('movies.html',
@@ -84,6 +106,16 @@ def movies(user_id):
 
 @app.route('/users/<int:user_id>/movies/<int:movie_id>/update', methods=['POST'])
 def update(user_id, movie_id):
+    """
+    Updates the title of a specific movie (via JSON payload).
+
+    Args:
+        user_id (int): The ID of the user (used for URL consistency, but not logic).
+        movie_id (int): The ID of the movie to be updated.
+
+    Returns:
+        tuple: JSON response with status ('success' or 'error') and HTTP status code.
+    """
     try:
         data = request.get_json()
         new_title = data.get('new_title')
@@ -102,6 +134,16 @@ def update(user_id, movie_id):
 
 @app.route('/users/<int:user_id>/movies/<int:movie_id>/delete', methods=['POST'])
 def delete(user_id, movie_id):
+    """
+    Deletes a movie from a user's favorites list.
+
+    Args:
+        user_id (int): The ID of the user.
+        movie_id (int): The ID of the movie to be deleted.
+
+    Returns:
+        Response: Redirects back to the movies page with a flash message.
+    """
     try:
         deleted_movie = data_manager.delete_movie(user_id, movie_id)
         redirect_url = url_for('movies', user_id=user_id)

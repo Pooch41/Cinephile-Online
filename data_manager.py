@@ -11,6 +11,7 @@ OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 if OMDB_API_KEY is None:
     raise RuntimeError("Missing OMDB API key")
 
+
 class DataManager:
 
     def _make_omdb_request(self, movie):
@@ -33,7 +34,6 @@ class DataManager:
             logging.error(f"Request Error: {err}", exc_info=True)
         return None
 
-
     def create_user(self, name: str) -> User | None:
         """
             Creates and commits a new User object to the database.
@@ -54,7 +54,6 @@ class DataManager:
             db.session.rollback()
             return None
 
-
     def get_users(self) -> list[dict] | None:
         """
             Retrieves all users from the database, ordered by ID.
@@ -68,7 +67,6 @@ class DataManager:
         except Exception as e:
             logging.error(f"Error on getting user: {e}")
             return None
-
 
     def get_movies(self, user_id) -> list[dict] | None:
 
@@ -90,7 +88,6 @@ class DataManager:
         except Exception as e:
             logging.error(f"Error on getting user's(id: {user_id}) favourite movies: {e}")
             return None
-
 
     def add_movie(self, user_id: int, movie_title: str) -> Movie | None:
         """
@@ -162,7 +159,6 @@ class DataManager:
             db.session.rollback()
             return None
 
-
     def update_movie(self, movie_id, new_title):
         """
         Updates the title of an existing movie in the Movie table.
@@ -189,7 +185,6 @@ class DataManager:
             db.session.rollback()
             logging.error(f"Error updating movie with id {movie_id}: {e}", exc_info=True)
             return False
-
 
     def delete_movie(self, user_id, movie_id):
         """
@@ -229,7 +224,6 @@ class DataManager:
             db.session.rollback()
             logging.error(f"Error updating movie with id {movie_id}: {e}", exc_info=True)
             return False
-
 
     def get_user_by_id(self, user_id: int):
         """
